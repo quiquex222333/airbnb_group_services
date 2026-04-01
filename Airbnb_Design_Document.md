@@ -111,7 +111,7 @@ el alcance son:
 1. **Disponibilidad y Tolerancia a Fallos (CAP):** El sistema de catálogo y
    motor de búsqueda (search core) debe priorizar la Disponibilidad sobre la
    Consistencia fuerte (asegurando un sistema tipo AP), garantizando operaciones
-   con un uptime de al menos **99.99%** para que los usuarios puedan explorar
+   con un uptime de al menos **99%** para que los usuarios puedan explorar
    alojamientos y descubrir opciones constantemente sin interrupciones
    operativas.
 2. **Consistencia Transaccional (Bases de Datos):** El servicio de pagos y
