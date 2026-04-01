@@ -43,6 +43,27 @@ gestionar los inventarios (alojamientos) a gran escala, realizar búsquedas
 rápidas mediante filtros precisos, administrar el flujo transaccional seguro de
 pagos/reservas y gestionar un modelo de reputación a través de reseñas.
 
+## Supuestos
+
+Durante el diseño de esta arquitectura se asumen como verdaderas las siguientes
+condiciones previas fundamentales:
+
+1. **Gestión de Identidad Externa:** Se dispone de un proveedor de identidad de
+   grado empresarial (Auth0) con alta disponibilidad para orquestar la
+   autenticación unificada (SSO), relevando a nuestro sistema del almacenamiento
+   crítico de contraseñas.
+2. **Pasarela de Pagos (PCI-DSS):** La tokenización de tarjetas y el
+   procesamiento directo a redes bancarias recaen íntegramente en un proveedor
+   externo seguro (Stripe), asumiendo que interactuaremos con ellos mediante
+   abstracciones de API.
+3. **Infraestructura Cloud-Native:** El sistema se desplegará sobre una nube
+   pública moderna (AWS) que provee aprovisionamiento elástico para
+   contenedores, bases de datos gestionadas y colas de mensajería (Kafka).
+4. **Red de Distribución de Multimedia (CDN):** El gran peso del contenido
+   estático (fotografías en alta resolución de los alojamientos) será absorbido
+   por una Red de Distribución de Contenido global, por ende, asumiendo que no
+   consumirá el ancho de banda del backend de las Core APIs.
+
 ## Alcance y Fases
 
 La presente **Fase 1** cubrirá el diseño base del núcleo transaccional y de
