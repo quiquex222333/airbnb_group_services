@@ -1,0 +1,9 @@
+{
+    "version": "1.0",
+    "plugins": {
+        "openapi": {
+            "service": "com.airbnb.api#AirbnbService",
+            "format": "yaml"
+        }
+    }
+}
