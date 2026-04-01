@@ -72,9 +72,9 @@ el alcance son:
    personas en la aplicación, para obtener una lista de opciones disponibles con
    su precio exacto, y poder confirmar la reserva del alojamiento seleccionado
    con el fin de asegurar su estancia temporal de manera rápida y segura.
-2. **Publicación y Gestión de Inventario (Anfitriones):** Los anfitriones deben
-   poder publicar sus propiedades especificando fotos, descripción, precio y
-   ubicación en la plataforma, para ofrecer su alojamiento en el catálogo de
+2. **Publicación y Gestión de Alojamientos (Anfitriones):** Los anfitriones
+   deben poder publicar sus propiedades especificando fotos, descripción, precio
+   y ubicación en la plataforma, para ofrecer su alojamiento en el catálogo de
    búsqueda de los huéspedes, y poder gestionar la disponibilidad de su
    calendario con el fin de monetizar su espacio de forma confiable e
    ininterrumpida.
