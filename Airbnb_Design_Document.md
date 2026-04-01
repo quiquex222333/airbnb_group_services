@@ -445,6 +445,10 @@ flowchart TD
      usando bloqueos a nivel de fila y _Isolation Levels_ elevados
      (Serializability/Read Committed) para proteger el Teorema CP. Garantiza la
      integridad financiera del 100%.
+   - **Nota de diseño:** Aunque el cobro final se delegue a una pasarela externa
+     (ej. Stripe), estos bloqueos relacionales son obligatorios para prevenir el
+     _double-booking_ de fechas y mantener un estado interno consistente ante
+     posibles fallas de red asíncronas con el proveedor de pagos.
 
 ---
 
