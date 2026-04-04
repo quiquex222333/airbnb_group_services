@@ -18,14 +18,133 @@ use airbnbclone.common.headers#JsonHeaders
 service AirbnbService {
     version: "2026-03-30",
     resources: [Listing, Booking],
+    operations: [Register, Login],
     errors: [
         BadRequestError,
         UnauthorizedError,
         ForbiddenError,
         NotFoundError,
         ConflictError,
+        EmailAlreadyExistsError,
+        InvalidPasswordPolicyError,
+        InvalidRoleError,
+        InvalidCredentialsError,
+        UserDisabledError,
+        AuthUserNotFoundError,
         InternalServerError
     ]
+}
+
+// ---------------------------------------------------------
+//  Auth (Registration — MVP)
+// ---------------------------------------------------------
+
+/// Rol permitido en el registro público del MVP.
+enum RegistrationRole {
+    GUEST = "guest"
+    HOST = "host"
+}
+
+@http(method: "POST", uri: "/v1/auth/register", code: 201)
+@auth([])
+operation Register {
+    input: RegisterInput,
+    output: RegisterOutput,
+    errors: [
+        EmailAlreadyExistsError,
+        InvalidPasswordPolicyError,
+        InvalidRoleError,
+        InternalServerError
+    ]
+}
+
+@input
+structure RegisterInput with [TraceHeaders, JsonHeaders] {
+    @required
+    @length(min: 1, max: 200)
+    name: String,
+
+    @required
+    email: String,
+
+    /// Mín. 8 caracteres, mayúscula, minúscula, dígito y carácter especial.
+    @required
+    @pattern("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,128}$")
+    password: String,
+
+    @required
+    role: RegistrationRole
+}
+
+@output
+structure RegisterOutput {
+    @required
+    userId: String,
+
+    @required
+    email: String,
+
+    @required
+    role: String,
+
+    @required
+    status: String
+}
+
+/// Autenticación: emite tokens de sesión (JWT u opacos según implementación) y perfil mínimo.
+@http(method: "POST", uri: "/v1/auth/login", code: 200)
+@auth([])
+operation Login {
+    input: LoginInput,
+    output: LoginOutput,
+    errors: [
+        InvalidCredentialsError,
+        UserDisabledError,
+        AuthUserNotFoundError,
+        InternalServerError
+    ]
+}
+
+@input
+structure LoginInput with [TraceHeaders, JsonHeaders] {
+    @required
+    email: String,
+
+    @required
+    password: String
+}
+
+/// Claims mínimos del usuario expuestos al cliente tras login (sin secretos).
+structure AuthenticatedUser {
+    @required
+    id: String,
+
+    @required
+    name: String,
+
+    @required
+    email: String,
+
+    @required
+    role: String
+}
+
+@output
+structure LoginOutput {
+    /// Access token (p. ej. JWT) para `Authorization: Bearer`.
+    @required
+    accessToken: String,
+
+    /// Refresh token para renovar sesión sin reintroducir contraseña.
+    @required
+    refreshToken: String,
+
+    /// Vida útil del access token en segundos (p. ej. 3600).
+    @required
+    expiresIn: Integer,
+
+    @required
+    user: AuthenticatedUser
 }
 
 // ---------------------------------------------------------
@@ -280,7 +399,6 @@ structure CreateReviewOutput {
 // ---------------------------------------------------------
 //  Global Errors (Centralized)
 // ---------------------------------------------------------
-
 @error("client")
 @httpError(400)
 structure BadRequestError {
@@ -321,4 +439,60 @@ structure ConflictError {
 structure InternalServerError {
     @required
     message: String
+}
+
+// ---------------------------------------------------------
+//  Auth Errors (Centralized)
+// ---------------------------------------------------------
+structure AuthErrorBody {
+    @required
+    code: String,
+
+    @required
+    message: String
+}
+
+@error("client")
+@httpError(409)
+structure EmailAlreadyExistsError {
+    @required
+    error: AuthErrorBody
+}
+
+@error("client")
+@httpError(422)
+structure InvalidPasswordPolicyError {
+    @required
+    error: AuthErrorBody
+}
+
+@error("client")
+@httpError(422)
+structure InvalidRoleError {
+    @required
+    error: AuthErrorBody
+}
+
+/// Email no registrado (`USER_NOT_FOUND`).
+@error("client")
+@httpError(404)
+structure AuthUserNotFoundError {
+    @required
+    error: AuthErrorBody
+}
+
+/// Cuenta existe pero no puede iniciar sesión (`USER_DISABLED`).
+@error("client")
+@httpError(403)
+structure UserDisabledError {
+    @required
+    error: AuthErrorBody
+}
+
+/// Usuario existe pero la contraseña no coincide (`INVALID_CREDENTIALS`).
+@error("client")
+@httpError(401)
+structure InvalidCredentialsError {
+    @required
+    error: AuthErrorBody
 }
