@@ -15,7 +15,7 @@ apiClient.interceptors.response.use(
 
       try {
         // Llamada silenciosa al BFF para refrescar cookie HTTPOnly
-        const res = await axios.post('http://localhost:3000/api/v1/auth/refresh', {}, {
+        const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'}/auth/refresh`, {}, {
           withCredentials: true 
         });
 
