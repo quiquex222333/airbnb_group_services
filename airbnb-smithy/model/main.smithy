@@ -249,7 +249,7 @@ structure ListingDetail {
     status: ListingLifecycleStatus,
 
     @required
-    location: ListingLocation,
+    location: ListingAddress,
 
     @required
     amenities: StringList,
@@ -280,7 +280,15 @@ structure ListListingsInput with [TraceHeaders, JsonHeaders] {
 
     @httpQuery("maxPrice")
     @range(min: 0)
-    maxPrice: Double
+    maxPrice: Double,
+
+    @httpQuery("checkIn")
+    @pattern("^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+    checkIn: String,
+
+    @httpQuery("checkOut")
+    @pattern("^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+    checkOut: String
 }
 
 @output
@@ -366,7 +374,7 @@ structure CreateListingInput with [TraceHeaders, JsonHeaders] {
     maxGuests: Integer,
 
     @required
-    location: ListingLocation,
+    location: ListingAddress,
 
     @required
     amenities: StringList,
@@ -377,7 +385,42 @@ structure CreateListingInput with [TraceHeaders, JsonHeaders] {
 
 /// Listing completo: mismos atributos que el body de creación más `status` y `createdAt` generados en servidor.
 @output
-structure CreateListingOutput with [ListingDetail] {
+structure CreateListingOutput {
+    @required
+    id: String,
+
+    @required
+    hostId: String,
+
+    @required
+    title: String,
+
+    description: String,
+
+    @required
+    type: ListingPropertyType,
+
+    @required
+    pricePerNight: Double,
+
+    @required
+    currency: String,
+
+    @required
+    maxGuests: Integer,
+
+    @required
+    location: ListingAddress,
+
+    @required
+    amenities: StringList,
+
+    @required
+    images: StringList,
+
+    @required
+    status: ListingLifecycleStatus,
+
     /// Fecha de creación en ISO 8601 (UTC), p. ej. `2026-03-29T19:00:00Z`.
     @required
     createdAt: String
@@ -435,7 +478,13 @@ resource Booking {
 @http(method: "POST", uri: "/v1/bookings", code: 201)
 operation CreateBooking {
     input: CreateBookingInput,
-    output: GetBookingOutput
+    output: GetBookingOutput,
+    errors: [
+        ConflictError,
+        BadRequestError,
+        NotFoundError,
+        InternalServerError
+    ]
 }
 
 @input
@@ -481,7 +530,12 @@ enum BookingStatus {
 @http(method: "GET", uri: "/v1/bookings/{bookingId}", code: 200)
 operation GetBooking {
     input: GetBookingInput,
-    output: GetBookingOutput
+    output: GetBookingOutput,
+    errors: [
+        ForbiddenError,
+        NotFoundError,
+        InternalServerError
+    ]
 }
 
 @input
@@ -527,7 +581,12 @@ resource Review {
 @http(method: "POST", uri: "/v1/bookings/{bookingId}/reviews", code: 201)
 operation CreateReview {
     input: CreateReviewInput,
-    output: CreateReviewOutput
+    output: CreateReviewOutput,
+    errors: [
+        ForbiddenError,
+        ConflictError,
+        InternalServerError
+    ]
 }
 
 @input
