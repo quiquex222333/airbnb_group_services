@@ -82,9 +82,11 @@ Tanto `backend/` como `frontend/` requieren de un archivo `.env` configurado que
 el proyecto detectará de forma automática. Si no existen, créalos basándote en
 los parámetros previstos o comunícate con un mantenedor del equipo.
 
-> El backend requerirá credenciales del pool como: `COGNITO_CLIENT_ID` y
-> `COGNITO_USER_POOL_ID`. El frontend únicamente requerirá rastrear al servidor
+> El backend requerirá credenciales del pool como: `COGNITO_CLIENT_ID` ,
+> `COGNITO_USER_POOL_ID` y `AWS_REGION`. El frontend únicamente requerirá rastrear al servidor
 > a través de la variable `VITE_API_URL=http://localhost:3000/api/v1`.
+
+> Además en la consola de AWS Cognito habilitar el `ALLOW_USER_PASSWORD_AUTH` esto porque los usuarios pueden iniciar sesión con un nombre de usuario y una contraseña. Este método envía el nombre de usuario y la contraseña directamente al grupo de usuarios. Por último crear el atributo personalizado `role`, pues será necesario para registrar usuarios.
 
 ### Tercer Paso: Inicialización y Comandos de Ejecución ▶️
 
