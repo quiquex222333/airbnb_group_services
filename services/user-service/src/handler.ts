@@ -45,9 +45,9 @@ export async function createUser(
     const now = new Date().toISOString();
 
     const user = {
+      email,
       userId: uuidv4(),
       fullName,
-      email,
       createdAt: now
     };
 
