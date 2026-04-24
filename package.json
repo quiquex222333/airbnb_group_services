@@ -19,5 +19,10 @@
   "bugs": {
     "url": "https://github.com/quiquex222333/airbnb_group_back/issues"
   },
-  "homepage": "https://github.com/quiquex222333/airbnb_group_back#readme"
+  "homepage": "https://github.com/quiquex222333/airbnb_group_back#readme",
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
 }
