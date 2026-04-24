@@ -3,7 +3,8 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    "types": ["node", "aws-lambda"]
+    "types": ["node", "aws-lambda", "jest"],
+    "isolatedModules": true
   },
   "include": ["src/**/*.ts"]
 }

@@ -5,13 +5,12 @@ import { v4 as uuidv4 } from "uuid";
 
 const dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
-const USERS_TABLE = process.env.USERS_TABLE ?? "";
-
 export async function createUser(
   event: APIGatewayProxyEventV2
 ): Promise<APIGatewayProxyResultV2> {
+  const usersTable = process.env.USERS_TABLE ?? "";
   try {
-    if (!USERS_TABLE) {
+    if (!usersTable) {
       return response(500, {
         error: {
           code: "CONFIGURATION_ERROR",
@@ -54,7 +53,7 @@ export async function createUser(
 
     await dynamoClient.send(
       new PutCommand({
-        TableName: USERS_TABLE,
+        TableName: usersTable,
         Item: user,
         ConditionExpression: "attribute_not_exists(email)"
       })
