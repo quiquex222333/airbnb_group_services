@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "sources": ["models"],
+  "maven": {
+    "dependencies": [
+      "software.amazon.smithy.typescript:smithy-typescript-codegen:0.48.0"
+    ]
+  },
+  "plugins": {
+    "typescript-client-codegen": {
+      "package": "@airbnb-clone/generated-client",
+      "packageVersion": "1.0.0",
+      "packageDescription": "Generated TypeScript client for Airbnb clone microservices"
+    }
+  }
+}
