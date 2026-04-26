@@ -1,0 +1,12 @@
+{
+  "name": "@airbnb-clone/notification-service",
+  "version": "1.0.0",
+  "main": "dist/handler.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sqs": "^3.758.0"
+  }
+}
