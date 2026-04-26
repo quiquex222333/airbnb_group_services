@@ -1,0 +1,38 @@
+{
+  "name": "airbnb_group_back",
+  "version": "1.0.0",
+  "description": "Bienvenido al repositorio del proyecto **Airbnb Clone**, desarrollado como parte de la maestría de Desarrollo Full Stack (Cloud Computing y Microservicios).",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "workspaces": [
+    "services/*",
+    "shared/*",
+    "infrastructure/cdk"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quiquex222333/airbnb_group_back.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/quiquex222333/airbnb_group_back/issues"
+  },
+  "homepage": "https://github.com/quiquex222333/airbnb_group_back#readme",
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.6.0",
+    "esbuild": "^0.28.0",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
+}
