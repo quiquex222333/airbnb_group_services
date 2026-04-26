@@ -3,14 +3,17 @@
   "sources": ["models"],
   "maven": {
     "dependencies": [
+      "software.amazon.smithy:smithy-aws-traits:1.69.0",
+      "software.amazon.smithy:smithy-aws-protocol-tests:1.69.0",
       "software.amazon.smithy.typescript:smithy-typescript-codegen:0.48.0"
     ]
   },
   "plugins": {
     "typescript-client-codegen": {
-      "package": "@airbnb-clone/generated-client",
+      "service": "airbnb.auth#AuthService",
+      "package": "@airbnb-clone/auth-contract",
       "packageVersion": "1.0.0",
-      "packageDescription": "Generated TypeScript client for Airbnb clone microservices"
+      "packageDescription": "Generated TypeScript contracts for Airbnb Auth Service"
     }
   }
 }
