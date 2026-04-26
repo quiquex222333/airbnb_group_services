@@ -35,3 +35,15 @@ export interface ConfirmSignUpInput {
 export interface ConfirmSignUpOutput {
     message: string;
 }
+
+export interface RefreshInput {
+    refreshToken: string;
+}
+
+export interface LogoutInput {
+    accessToken: string;
+}
+
+export interface LogoutOutput {
+    message: string;
+}

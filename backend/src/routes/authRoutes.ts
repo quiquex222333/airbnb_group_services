@@ -13,6 +13,8 @@ const authHandler = new AuthHandler(authService);
 authRouter.post('/register', (req, res) => authHandler.register(req, res));
 authRouter.post('/confirm', (req, res) => authHandler.confirm(req, res));
 authRouter.post('/login', (req, res) => authHandler.login(req, res));
+authRouter.post('/refresh', (req, res) => authHandler.refresh(req, res));
+authRouter.post('/logout', authMiddleware, (req, res) => authHandler.logout(req, res));
 
 // Rutas Protegidas (ejemplo para obtener el perfil)
 authRouter.get('/me', authMiddleware, (req, res) => {

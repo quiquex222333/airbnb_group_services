@@ -45,6 +45,39 @@ export class AuthHandler {
         }
     }
 
+    public async refresh(req: Request, res: Response): Promise<void> {
+        try {
+            const refreshToken = req.cookies.refreshToken;
+            if (!refreshToken) {
+                res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'No refresh token' } });
+                return;
+            }
+
+            const output = await this.authService.refresh({ refreshToken });
+
+            // Remove refresh token from response body
+            const { refreshToken: newRefreshToken, ...responseBody } = output;
+            res.status(200).json(responseBody);
+        } catch (error: any) {
+            this.handleError(res, error);
+        }
+    }
+
+    public async logout(req: Request, res: Response): Promise<void> {
+        try {
+            const authHeader = req.headers.authorization;
+            const accessToken = authHeader?.split(' ')[1] || '';
+            
+            await this.authService.logout({ accessToken });
+
+            // Clear cookie
+            res.clearCookie('refreshToken');
+            res.status(200).json({ message: 'Logged out successfully' });
+        } catch (error: any) {
+            this.handleError(res, error);
+        }
+    }
+
     private handleError(res: Response, error: any): void {
         console.error('AuthHandler Error:', error);
         const statusCode = error.statusCode || 500;

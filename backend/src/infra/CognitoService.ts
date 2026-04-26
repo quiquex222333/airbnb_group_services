@@ -10,7 +10,8 @@ import { IAuthService } from "../services/IAuthService";
 import { 
     RegisterInput, RegisterOutput, 
     LoginInput, LoginOutput, 
-    ConfirmSignUpInput, ConfirmSignUpOutput 
+    ConfirmSignUpInput, ConfirmSignUpOutput,
+    RefreshInput, LogoutInput, LogoutOutput
 } from "../generated/auth";
 
 export class CognitoService implements IAuthService {
@@ -101,10 +102,47 @@ export class CognitoService implements IAuthService {
         return { message: 'User confirmed successfully' };
     }
 
-    async logout(accessToken: string): Promise<void> {
+    async refresh(input: RefreshInput): Promise<LoginOutput> {
+        const command = new InitiateAuthCommand({
+            AuthFlow: 'REFRESH_TOKEN_AUTH',
+            ClientId: this.clientId,
+            AuthParameters: {
+                REFRESH_TOKEN: input.refreshToken
+            }
+        });
+
+        const response = await this.client.send(command);
+        
+        if (!response.AuthenticationResult) {
+            throw new Error('Refresh failed');
+        }
+
+        // Obtener perfil para el LoginOutput
+        const userCommand = new GetUserCommand({
+            AccessToken: response.AuthenticationResult.AccessToken
+        });
+        const userRes = await this.client.send(userCommand);
+        const name = userRes.UserAttributes?.find(a => a.Name === 'name')?.Value || '';
+        const role = userRes.UserAttributes?.find(a => a.Name === 'custom:role')?.Value || 'guest';
+
+        return {
+            accessToken: response.AuthenticationResult.AccessToken!,
+            refreshToken: input.refreshToken, // El refresh token suele ser el mismo o uno nuevo
+            expiresIn: response.AuthenticationResult.ExpiresIn || 3600,
+            user: {
+                id: userRes.Username || '',
+                email: userRes.UserAttributes?.find(a => a.Name === 'email')?.Value || '',
+                name: name,
+                role: role
+            }
+        };
+    }
+
+    async logout(input: LogoutInput): Promise<LogoutOutput> {
         const command = new GlobalSignOutCommand({
-            AccessToken: accessToken
+            AccessToken: input.accessToken
         });
         await this.client.send(command);
+        return { message: 'Logged out successfully' };
     }
 }
