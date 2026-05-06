@@ -17,6 +17,7 @@ import DashboardScreen from '../pages/DashboardScreen';
 export const AppRouter = () => {
   const [isChecking, setIsChecking] = useState(true);
   const setCredentials = useAuthStore(state => state.setCredentials);
+  const logout = useAuthStore(state => state.logout);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -25,13 +26,14 @@ export const AppRouter = () => {
         const res = await apiClient.post('/auth/refresh');
         setCredentials(res.data.user, res.data.accessToken);
       } catch (err) {
-        console.log("No active session found");
+        console.log("No active session found — clearing stale credentials");
+        logout();
       } finally {
         setIsChecking(false);
       }
     };
     initAuth();
-  }, [setCredentials]);
+  }, [setCredentials, logout]);
 
   if (isChecking) {
     return (
