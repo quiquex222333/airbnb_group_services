@@ -1,4 +1,10 @@
 export type {
+  RegisterUserInput,
+  RegisterUserOutput,
+  ConfirmUserInput,
+  ConfirmUserOutput,
+  LoginUserInput,
+  LoginUserOutput,
   CreateUserInput,
   CreateUserOutput,
   CreateListingInput,
