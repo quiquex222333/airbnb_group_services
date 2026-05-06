@@ -15,9 +15,13 @@
   ],
   "scripts": {
     "smithy:build": "cd contracts/smithy && smithy build",
+    "smithy:copy": "rm -rf generated/typescript/airbnb-client && mkdir -p generated/typescript/airbnb-client && cp -R contracts/smithy/build/smithy/source/typescript-client-codegen/* generated/typescript/airbnb-client/",
+    "smithy:fix-npm": "node scripts/fix-generated-client-package.js",
+    "generated:build": "npm run build -w @airbnb-clone/generated-client",
     "contracts:build": "npm run build -w @airbnb-clone/contracts",
+    "smithy:sync": "npm run smithy:build && npm run smithy:copy && npm run smithy:fix-npm && npm install && npm run generated:build && npm run contracts:build",
     "services:build": "npm run build --workspaces --if-present",
-    "build:all": "npm run smithy:build && npm run contracts:build && npm run services:build",
+    "build:all": "npm run smithy:sync && npm run services:build",
     "test": "npm run test --workspaces --if-present"
   },
   "repository": {
