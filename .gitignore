@@ -48,6 +48,3 @@ cdk.out/
 # OS
 .DS_Store
 **/.DS_Store
-
-legacy/
-apps/
