@@ -10,10 +10,10 @@
   },
   "plugins": {
     "typescript-client-codegen": {
-      "service": "airbnb.auth#AuthService",
-      "package": "@airbnb-clone/auth-contract",
+      "service": "airbnb#AirbnbService",
+      "package": "@airbnb-clone/generated-client",
       "packageVersion": "1.0.0",
-      "packageDescription": "Generated TypeScript contracts for Airbnb Auth Service"
+      "packageDescription": "Generated TypeScript client for Airbnb microservices"
     }
   }
 }

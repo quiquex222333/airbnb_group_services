@@ -9,10 +9,15 @@
   "workspaces": [
     "services/*",
     "shared/*",
+    "generated/typescript/*",
+    "apps/frontend",
     "infrastructure/cdk"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "smithy:build": "cd contracts/smithy && smithy build",
+    "contracts:build": "npm run build -w @airbnb-clone/contracts",
+    "services:build": "npm run build --workspaces --if-present",
+    "build:all": "npm run smithy:build && npm run contracts:build && npm run services:build",
     "test": "npm run test --workspaces --if-present"
   },
   "repository": {
