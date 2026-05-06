@@ -1,4 +1,5 @@
-import { createUser } from "./handler";
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { createUser } from "../../../services/user-service/src/handler";
 
 function asHttpResult(result: any) {
   return result as {

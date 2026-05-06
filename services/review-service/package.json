@@ -4,7 +4,8 @@
   "main": "dist/handler.js",
   "scripts": {
     "build": "tsc",
-    "test": "echo \"no tests yet\""
+    "test": "jest ../../tests/review-service/unit",
+    "test:integration": "jest ../../tests/review-service/integration"
   },
   "dependencies": {
     "@airbnb-clone/contracts": "^1.0.0",

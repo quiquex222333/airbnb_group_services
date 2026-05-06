@@ -4,7 +4,8 @@
   "main": "dist/handler.js",
   "scripts": {
     "build": "tsc",
-    "test": "jest"
+    "test": "jest ../../tests/notification-service/unit",
+    "test:integration": "jest ../../tests/notification-service/integration"
   },
   "dependencies": {
     "@aws-sdk/client-sqs": "^3.758.0"
