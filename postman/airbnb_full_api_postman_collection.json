@@ -1,0 +1,466 @@
+{
+  "info": {
+    "name": "Airbnb Microservices API - Full Flow",
+    "description": "Auth Service + endpoints protegidos. El request de login guarda idToken/accessToken/refreshToken automáticamente.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "apiUrl",
+      "value": "https://TU_API_ID.execute-api.us-east-2.amazonaws.com/prod"
+    },
+    {
+      "key": "email",
+      "value": "nuevo@test.com"
+    },
+    {
+      "key": "password",
+      "value": "Test1234"
+    },
+    {
+      "key": "fullName",
+      "value": "Nuevo Usuario"
+    },
+    {
+      "key": "confirmationCode",
+      "value": "PEGA_CODIGO_DEL_CORREO"
+    },
+    {
+      "key": "idToken",
+      "value": ""
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "listingId",
+      "value": "listing-demo-123"
+    },
+    {
+      "key": "bookingId",
+      "value": ""
+    },
+    {
+      "key": "reviewListingId",
+      "value": "listing-demo-123"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Auth Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{apiUrl}}/v1/auth/register",
+          "host": [
+            "{{apiUrl}}"
+          ],
+          "path": [
+            "v1",
+            "auth",
+            "register"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"fullName\": \"{{fullName}}\"\n}"
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Register returns 201 or 409', function () { pm.expect([201,409]).to.include(pm.response.code); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Auth Confirm",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{apiUrl}}/v1/auth/confirm",
+          "host": [
+            "{{apiUrl}}"
+          ],
+          "path": [
+            "v1",
+            "auth",
+            "confirm"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"confirmationCode\": \"{{confirmationCode}}\"\n}"
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Confirm returns 200 or 409', function () { pm.expect([200,409]).to.include(pm.response.code); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Auth Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{apiUrl}}/v1/auth/login",
+          "host": [
+            "{{apiUrl}}"
+          ],
+          "path": [
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.idToken) { pm.collectionVariables.set('idToken', json.idToken); pm.environment.set('idToken', json.idToken); }",
+              "if (json.accessToken) { pm.collectionVariables.set('accessToken', json.accessToken); pm.environment.set('accessToken', json.accessToken); }",
+              "if (json.refreshToken) { pm.collectionVariables.set('refreshToken', json.refreshToken); pm.environment.set('refreshToken', json.refreshToken); }",
+              "pm.test('Login returns idToken', function () { pm.response.to.have.status(200); pm.expect(json.idToken).to.exist; });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Create Internal User (Protected)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{idToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{apiUrl}}/v1/users",
+          "host": [
+            "{{apiUrl}}"
+          ],
+          "path": [
+            "v1",
+            "users"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"{{fullName}}\"\n}"
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Create user returns 201 or 409', function () { pm.expect([201,409]).to.include(pm.response.code); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Create Listing (Protected)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{idToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{apiUrl}}/v1/listings",
+          "host": [
+            "{{apiUrl}}"
+          ],
+          "path": [
+            "v1",
+            "listings"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Depto en La Paz\",\n  \"price\": 50\n}"
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Create listing returns 201', function () { pm.response.to.have.status(201); });",
+              "if (json.listing && json.listing.listingId) {",
+              "  pm.collectionVariables.set('listingId', json.listing.listingId);",
+              "  pm.environment.set('listingId', json.listing.listingId);",
+              "  pm.collectionVariables.set('reviewListingId', json.listing.listingId);",
+              "  pm.environment.set('reviewListingId', json.listing.listingId);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Create Booking (Protected)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{idToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{apiUrl}}/v1/bookings",
+          "host": [
+            "{{apiUrl}}"
+          ],
+          "path": [
+            "v1",
+            "bookings"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"listingId\": \"{{listingId}}\",\n  \"checkIn\": \"2026-05-01\",\n  \"checkOut\": \"2026-05-05\",\n  \"guests\": 2,\n  \"totalAmount\": 200\n}"
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Create booking returns 201', function () { pm.response.to.have.status(201); });",
+              "if (json.booking && json.booking.bookingId) { pm.collectionVariables.set('bookingId', json.booking.bookingId); pm.environment.set('bookingId', json.booking.bookingId); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Get Booking By Id (Protected)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{idToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{apiUrl}}/v1/bookings/{{bookingId}}",
+          "host": [
+            "{{apiUrl}}"
+          ],
+          "path": [
+            "v1",
+            "bookings",
+            "{{bookingId}}"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Get booking returns 200', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Create Review (Protected)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{idToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{apiUrl}}/v1/reviews",
+          "host": [
+            "{{apiUrl}}"
+          ],
+          "path": [
+            "v1",
+            "reviews"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"listingId\": \"{{reviewListingId}}\",\n  \"rating\": 5,\n  \"comment\": \"Excelente lugar\"\n}"
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Create review returns 201', function () { pm.response.to.have.status(201); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Get Reviews By Listing (Protected)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{idToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{apiUrl}}/v1/reviews/listing/{{reviewListingId}}",
+          "host": [
+            "{{apiUrl}}"
+          ],
+          "path": [
+            "v1",
+            "reviews",
+            "listing",
+            "{{reviewListingId}}"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Get reviews returns 200', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Create Listing Validation Error (Protected)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{idToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{apiUrl}}/v1/listings",
+          "host": [
+            "{{apiUrl}}"
+          ],
+          "path": [
+            "v1",
+            "listings"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"\",\n  \"price\": 0\n}"
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Validation returns 400', function () { pm.response.to.have.status(400); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

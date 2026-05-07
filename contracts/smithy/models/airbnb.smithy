@@ -13,6 +13,9 @@ use smithy.api#readonly
 service AirbnbService {
     version: "2026-04-26",
     operations: [
+        RegisterUser,
+        ConfirmUser,
+        LoginUser,
         CreateUser,
         CreateListing,
         CreateBooking,
@@ -20,6 +23,77 @@ service AirbnbService {
         CreateReview,
         GetReviewsByListing
     ]
+}
+
+// ================= AUTH =================
+
+@http(method: "POST", uri: "/v1/auth/register", code: 201)
+operation RegisterUser {
+    input: RegisterUserInput
+    output: RegisterUserOutput
+    errors: [ValidationError, ConflictError]
+}
+
+@http(method: "POST", uri: "/v1/auth/confirm", code: 200)
+operation ConfirmUser {
+    input: ConfirmUserInput
+    output: ConfirmUserOutput
+    errors: [ValidationError, NotFoundError]
+}
+
+@http(method: "POST", uri: "/v1/auth/login", code: 200)
+operation LoginUser {
+    input: LoginUserInput
+    output: LoginUserOutput
+    errors: [ValidationError, UnauthorizedError, NotFoundError]
+}
+
+structure RegisterUserInput {
+    @required
+    email: String
+
+    @required
+    password: String
+
+    @required
+    @length(min: 2, max: 80)
+    fullName: String
+}
+
+structure RegisterUserOutput {
+    @required
+    message: String
+
+    userSub: String
+}
+
+structure ConfirmUserInput {
+    @required
+    email: String
+
+    @required
+    confirmationCode: String
+}
+
+structure ConfirmUserOutput {
+    @required
+    message: String
+}
+
+structure LoginUserInput {
+    @required
+    email: String
+
+    @required
+    password: String
+}
+
+structure LoginUserOutput {
+    tokenType: String
+    idToken: String
+    accessToken: String
+    refreshToken: String
+    expiresIn: Integer
 }
 
 // ================= USER =================

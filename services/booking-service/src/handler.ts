@@ -99,6 +99,18 @@ export const getBookingById = async (
       });
     }
 
+    const claims = (event.requestContext as any)?.authorizer?.claims;
+    const authenticatedUserId = claims?.sub;
+
+    if (!authenticatedUserId) {
+      return response(401, {
+        error: {
+          code: "UNAUTHORIZED",
+          message: "User not authenticated"
+        }
+      });
+    }
+
     const result = await dynamo.send(
       new GetCommand({
         TableName: process.env.BOOKINGS_TABLE,
@@ -109,6 +121,15 @@ export const getBookingById = async (
     if (!result.Item) {
       return response(404, {
         error: { code: "NOT_FOUND", message: "Booking not found" }
+      });
+    }
+
+    if (result.Item.guestId !== authenticatedUserId) {
+      return response(403, {
+        error: {
+          code: "FORBIDDEN",
+          message: "You are not allowed to access this booking"
+        }
       });
     }
 
