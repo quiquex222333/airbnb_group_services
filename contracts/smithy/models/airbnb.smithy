@@ -58,6 +58,9 @@ structure RegisterUserInput {
     @required
     @length(min: 2, max: 80)
     fullName: String
+
+    @required
+    role: String
 }
 
 structure RegisterUserOutput {
@@ -94,6 +97,7 @@ structure LoginUserOutput {
     accessToken: String
     refreshToken: String
     expiresIn: Integer
+    user: User
 }
 
 // ================= USER =================
@@ -125,6 +129,9 @@ structure User {
 
     @required
     fullName: String
+
+    @required
+    role: String
 
     @required
     createdAt: String

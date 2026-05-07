@@ -3,7 +3,8 @@ import {
   CognitoIdentityProviderClient,
   SignUpCommand,
   ConfirmSignUpCommand,
-  InitiateAuthCommand
+  InitiateAuthCommand,
+  GetUserCommand
 } from "@aws-sdk/client-cognito-identity-provider";
 
 import {
@@ -11,7 +12,7 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, PutCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge";
 import { randomUUID } from "crypto";
 
@@ -91,6 +92,10 @@ export const register = async (
           {
             Name: "name",
             Value: fullName
+          },
+          {
+            Name: "custom:role",
+            Value: String(body.role ?? "guest")
           }
         ]
       })
@@ -185,6 +190,10 @@ export const confirm = async (
       cognitoUser.UserAttributes?.find((attr) => attr.Name === "name")?.Value ??
       email;
 
+    const role =
+      cognitoUser.UserAttributes?.find((attr) => attr.Name === "custom:role")?.Value ??
+      "guest";
+
     const user = {
       email,
       userId: randomUUID(),
@@ -193,6 +202,7 @@ export const confirm = async (
         cognitoUser.Username ??
         email,
       fullName,
+      role,
       createdAt: new Date().toISOString()
     };
 
@@ -320,12 +330,26 @@ export const login = async (
 
     const refreshToken = result.AuthenticationResult?.RefreshToken;
     
+    const usersTable = process.env.USERS_TABLE ?? "";
+    let user = null;
+
+    if (usersTable) {
+      const userResult = await dynamo.send(
+        new GetCommand({
+          TableName: usersTable,
+          Key: { email }
+        })
+      );
+      user = userResult.Item;
+    }
+
     const output: LoginUserOutput = {
       tokenType: result.AuthenticationResult?.TokenType,
       idToken: result.AuthenticationResult?.IdToken,
       accessToken: result.AuthenticationResult?.AccessToken,
-      refreshToken: refreshToken, // Lo mantenemos por compatibilidad
-      expiresIn: result.AuthenticationResult?.ExpiresIn
+      refreshToken: refreshToken,
+      expiresIn: result.AuthenticationResult?.ExpiresIn,
+      user: user as any
     };
 
     const headers: Record<string, string> = {};
@@ -413,10 +437,41 @@ export const refresh = async (
       })
     );
 
+    const newAccessToken = result.AuthenticationResult?.AccessToken;
+    const idToken = result.AuthenticationResult?.IdToken;
+    const expiresIn = result.AuthenticationResult?.ExpiresIn;
+
+    const usersTable = process.env.USERS_TABLE ?? "";
+    let user = null;
+
+    if (newAccessToken && usersTable) {
+      try {
+        // Obtenemos el email del usuario usando el nuevo token de acceso
+        const cognitoUser = await cognito.send(
+          new GetUserCommand({ AccessToken: newAccessToken })
+        );
+        
+        const email = cognitoUser.UserAttributes?.find(attr => attr.Name === "email")?.Value;
+
+        if (email) {
+          const userResult = await dynamo.send(
+            new GetCommand({
+              TableName: usersTable,
+              Key: { email }
+            })
+          );
+          user = userResult.Item;
+        }
+      } catch (e) {
+        console.error("Error fetching user data during refresh", e);
+      }
+    }
+
     const output = {
-      accessToken: result.AuthenticationResult?.AccessToken,
-      idToken: result.AuthenticationResult?.IdToken,
-      expiresIn: result.AuthenticationResult?.ExpiresIn
+      accessToken: newAccessToken,
+      idToken: idToken,
+      expiresIn: expiresIn,
+      user: user as any
     };
 
     return response(200, output);
