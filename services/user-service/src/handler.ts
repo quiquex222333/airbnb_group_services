@@ -103,7 +103,9 @@ function response(statusCode: number, body: unknown): APIGatewayProxyResultV2 {
   return {
     statusCode,
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "http://localhost:5173",
+      "Access-Control-Allow-Credentials": "true"
     },
     body: JSON.stringify(body)
   };

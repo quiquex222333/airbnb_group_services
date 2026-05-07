@@ -318,15 +318,24 @@ export const login = async (
       })
     );
 
+    const refreshToken = result.AuthenticationResult?.RefreshToken;
+    
     const output: LoginUserOutput = {
       tokenType: result.AuthenticationResult?.TokenType,
       idToken: result.AuthenticationResult?.IdToken,
       accessToken: result.AuthenticationResult?.AccessToken,
-      refreshToken: result.AuthenticationResult?.RefreshToken,
+      refreshToken: refreshToken, // Lo mantenemos por compatibilidad
       expiresIn: result.AuthenticationResult?.ExpiresIn
     };
 
-    return response(200, output);
+    const headers: Record<string, string> = {};
+    if (refreshToken) {
+      // Establecemos la cookie para el frontend. 
+      // Nota: SameSite=None y Secure son obligatorios para cross-site en la mayoría de navegadores.
+      headers["Set-Cookie"] = `refreshToken=${refreshToken}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=2592000`;
+    }
+
+    return response(200, output, headers);
   } catch (error: any) {
     console.error("LoginError", sanitizeError(error));
 
@@ -366,14 +375,92 @@ export const login = async (
   }
 };
 
-function response(statusCode: number, body: unknown): APIGatewayProxyResultV2 {
+export const refresh = async (
+  event: APIGatewayProxyEventV2
+): Promise<APIGatewayProxyResultV2> => {
+  try {
+    const userPoolClientId = process.env.USER_POOL_CLIENT_ID ?? "";
+
+    if (!userPoolClientId) {
+      return response(500, {
+        error: {
+          code: "CONFIGURATION_ERROR",
+          message: "USER_POOL_CLIENT_ID is missing"
+        }
+      });
+    }
+
+    // Extraer Refresh Token de la cookie
+    const cookieHeader = (event.headers as any)?.Cookie || (event.headers as any)?.cookie || "";
+    const refreshToken = getCookie("refreshToken", cookieHeader);
+
+    if (!refreshToken) {
+      return response(401, {
+        error: {
+          code: "MISSING_REFRESH_TOKEN",
+          message: "Refresh token is missing from cookies"
+        }
+      });
+    }
+
+    const result = await cognito.send(
+      new InitiateAuthCommand({
+        AuthFlow: "REFRESH_TOKEN_AUTH",
+        ClientId: userPoolClientId,
+        AuthParameters: {
+          REFRESH_TOKEN: refreshToken
+        }
+      })
+    );
+
+    const output = {
+      accessToken: result.AuthenticationResult?.AccessToken,
+      idToken: result.AuthenticationResult?.IdToken,
+      expiresIn: result.AuthenticationResult?.ExpiresIn
+    };
+
+    return response(200, output);
+  } catch (error: any) {
+    console.error("RefreshError", sanitizeError(error));
+
+    if (error?.name === "NotAuthorizedException") {
+      return response(401, {
+        error: {
+          code: "INVALID_REFRESH_TOKEN",
+          message: "Refresh token is invalid or expired"
+        }
+      });
+    }
+
+    return response(500, {
+      error: {
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Unexpected error refreshing token"
+      }
+    });
+  }
+};
+
+function response(
+  statusCode: number, 
+  body: unknown, 
+  headers: Record<string, string> = {}
+): APIGatewayProxyResultV2 {
   return {
     statusCode,
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "http://localhost:5173",
+      "Access-Control-Allow-Credentials": "true",
+      ...headers
     },
     body: JSON.stringify(body)
   };
+}
+
+function getCookie(name: string, cookieString: string): string | null {
+  const match = cookieString.match(new RegExp("(^| )" + name + "=([^;]+)"));
+  return match ? match[2] : null;
 }
 
 function isValidEmail(email: string): boolean {
