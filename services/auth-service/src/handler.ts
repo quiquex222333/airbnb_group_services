@@ -496,6 +496,16 @@ export const refresh = async (
   }
 };
 
+export const logout = async (): Promise<APIGatewayProxyResultV2> => {
+  return response(
+    200, 
+    { message: "Logged out successfully" }, 
+    {
+      "Set-Cookie": "refreshToken=; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT"
+    }
+  );
+};
+
 function response(
   statusCode: number, 
   body: unknown, 
