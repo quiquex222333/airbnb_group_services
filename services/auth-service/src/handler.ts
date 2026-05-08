@@ -3,7 +3,8 @@ import {
   CognitoIdentityProviderClient,
   SignUpCommand,
   ConfirmSignUpCommand,
-  InitiateAuthCommand
+  InitiateAuthCommand,
+  GetUserCommand
 } from "@aws-sdk/client-cognito-identity-provider";
 
 import {
@@ -11,7 +12,7 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, PutCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge";
 import { randomUUID } from "crypto";
 
@@ -91,6 +92,10 @@ export const register = async (
           {
             Name: "name",
             Value: fullName
+          },
+          {
+            Name: "custom:role",
+            Value: String(body.role ?? "guest")
           }
         ]
       })
@@ -185,6 +190,10 @@ export const confirm = async (
       cognitoUser.UserAttributes?.find((attr) => attr.Name === "name")?.Value ??
       email;
 
+    const role =
+      cognitoUser.UserAttributes?.find((attr) => attr.Name === "custom:role")?.Value ??
+      "guest";
+
     const user = {
       email,
       userId: randomUUID(),
@@ -193,6 +202,7 @@ export const confirm = async (
         cognitoUser.Username ??
         email,
       fullName,
+      role,
       createdAt: new Date().toISOString()
     };
 
@@ -318,15 +328,38 @@ export const login = async (
       })
     );
 
+    const refreshToken = result.AuthenticationResult?.RefreshToken;
+    
+    const usersTable = process.env.USERS_TABLE ?? "";
+    let user = null;
+
+    if (usersTable) {
+      const userResult = await dynamo.send(
+        new GetCommand({
+          TableName: usersTable,
+          Key: { email }
+        })
+      );
+      user = userResult.Item;
+    }
+
     const output: LoginUserOutput = {
       tokenType: result.AuthenticationResult?.TokenType,
       idToken: result.AuthenticationResult?.IdToken,
       accessToken: result.AuthenticationResult?.AccessToken,
-      refreshToken: result.AuthenticationResult?.RefreshToken,
-      expiresIn: result.AuthenticationResult?.ExpiresIn
+      refreshToken: refreshToken,
+      expiresIn: result.AuthenticationResult?.ExpiresIn,
+      user: user as any
     };
 
-    return response(200, output);
+    const headers: Record<string, string> = {};
+    if (refreshToken) {
+      // Establecemos la cookie para el frontend. 
+      // Nota: SameSite=None y Secure son obligatorios para cross-site en la mayoría de navegadores.
+      headers["Set-Cookie"] = `refreshToken=${refreshToken}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=2592000`;
+    }
+
+    return response(200, output, headers);
   } catch (error: any) {
     console.error("LoginError", sanitizeError(error));
 
@@ -366,14 +399,133 @@ export const login = async (
   }
 };
 
-function response(statusCode: number, body: unknown): APIGatewayProxyResultV2 {
+export const refresh = async (
+  event: APIGatewayProxyEventV2
+): Promise<APIGatewayProxyResultV2> => {
+  try {
+    const userPoolClientId = process.env.USER_POOL_CLIENT_ID ?? "";
+
+    if (!userPoolClientId) {
+      return response(500, {
+        error: {
+          code: "CONFIGURATION_ERROR",
+          message: "USER_POOL_CLIENT_ID is missing"
+        }
+      });
+    }
+
+    // Extraer Refresh Token de la cookie
+    const cookieHeader = (event.headers as any)?.Cookie || (event.headers as any)?.cookie || "";
+    const refreshToken = getCookie("refreshToken", cookieHeader);
+
+    if (!refreshToken) {
+      return response(401, {
+        error: {
+          code: "MISSING_REFRESH_TOKEN",
+          message: "Refresh token is missing from cookies"
+        }
+      });
+    }
+
+    const result = await cognito.send(
+      new InitiateAuthCommand({
+        AuthFlow: "REFRESH_TOKEN_AUTH",
+        ClientId: userPoolClientId,
+        AuthParameters: {
+          REFRESH_TOKEN: refreshToken
+        }
+      })
+    );
+
+    const newAccessToken = result.AuthenticationResult?.AccessToken;
+    const idToken = result.AuthenticationResult?.IdToken;
+    const expiresIn = result.AuthenticationResult?.ExpiresIn;
+
+    const usersTable = process.env.USERS_TABLE ?? "";
+    let user = null;
+
+    if (newAccessToken && usersTable) {
+      try {
+        // Obtenemos el email del usuario usando el nuevo token de acceso
+        const cognitoUser = await cognito.send(
+          new GetUserCommand({ AccessToken: newAccessToken })
+        );
+        
+        const email = cognitoUser.UserAttributes?.find(attr => attr.Name === "email")?.Value;
+
+        if (email) {
+          const userResult = await dynamo.send(
+            new GetCommand({
+              TableName: usersTable,
+              Key: { email }
+            })
+          );
+          user = userResult.Item;
+        }
+      } catch (e) {
+        console.error("Error fetching user data during refresh", e);
+      }
+    }
+
+    const output = {
+      accessToken: newAccessToken,
+      idToken: idToken,
+      expiresIn: expiresIn,
+      user: user as any
+    };
+
+    return response(200, output);
+  } catch (error: any) {
+    console.error("RefreshError", sanitizeError(error));
+
+    if (error?.name === "NotAuthorizedException") {
+      return response(401, {
+        error: {
+          code: "INVALID_REFRESH_TOKEN",
+          message: "Refresh token is invalid or expired"
+        }
+      });
+    }
+
+    return response(500, {
+      error: {
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Unexpected error refreshing token"
+      }
+    });
+  }
+};
+
+export const logout = async (): Promise<APIGatewayProxyResultV2> => {
+  return response(
+    200, 
+    { message: "Logged out successfully" }, 
+    {
+      "Set-Cookie": "refreshToken=; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT"
+    }
+  );
+};
+
+function response(
+  statusCode: number, 
+  body: unknown, 
+  headers: Record<string, string> = {}
+): APIGatewayProxyResultV2 {
   return {
     statusCode,
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "http://localhost:5173",
+      "Access-Control-Allow-Credentials": "true",
+      ...headers
     },
     body: JSON.stringify(body)
   };
+}
+
+function getCookie(name: string, cookieString: string): string | null {
+  const match = cookieString.match(new RegExp("(^| )" + name + "=([^;]+)"));
+  return match ? match[2] : null;
 }
 
 function isValidEmail(email: string): boolean {

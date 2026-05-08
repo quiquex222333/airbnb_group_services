@@ -16,6 +16,8 @@ service AirbnbService {
         RegisterUser,
         ConfirmUser,
         LoginUser,
+        RefreshToken,
+        LogoutUser,
         CreateUser,
         CreateListing,
         CreateBooking,
@@ -48,6 +50,19 @@ operation LoginUser {
     errors: [ValidationError, UnauthorizedError, NotFoundError]
 }
 
+@http(method: "POST", uri: "/v1/auth/refresh", code: 200)
+operation RefreshToken {
+    input: RefreshTokenInput
+    output: RefreshTokenOutput
+    errors: [ValidationError, UnauthorizedError]
+}
+
+@http(method: "POST", uri: "/v1/auth/logout", code: 200)
+operation LogoutUser {
+    input: LogoutUserInput
+    output: LogoutUserOutput
+}
+
 structure RegisterUserInput {
     @required
     email: String
@@ -58,6 +73,9 @@ structure RegisterUserInput {
     @required
     @length(min: 2, max: 80)
     fullName: String
+
+    @required
+    role: String
 }
 
 structure RegisterUserOutput {
@@ -94,6 +112,22 @@ structure LoginUserOutput {
     accessToken: String
     refreshToken: String
     expiresIn: Integer
+    user: User
+}
+
+structure RefreshTokenInput {}
+
+structure RefreshTokenOutput {
+    accessToken: String
+    idToken: String
+    expiresIn: Integer
+    user: User
+}
+
+structure LogoutUserInput {}
+
+structure LogoutUserOutput {
+    message: String
 }
 
 // ================= USER =================
@@ -125,6 +159,9 @@ structure User {
 
     @required
     fullName: String
+
+    @required
+    role: String
 
     @required
     createdAt: String
