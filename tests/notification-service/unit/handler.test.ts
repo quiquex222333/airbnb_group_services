@@ -1,4 +1,5 @@
-import { handleUserCreated } from "./handler";
+import { describe, it, expect, jest } from '@jest/globals';
+import { handleUserCreated } from "../../../services/notification-service/src/handler";
 
 describe("Notification Service", () => {
   it("should process user.created event", async () => {
@@ -15,7 +16,7 @@ describe("Notification Service", () => {
       ]
     } as any;
 
-    const consoleSpy = jest.spyOn(console, "log").mockImplementation();
+    const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => { });
 
     await handleUserCreated(event);
 

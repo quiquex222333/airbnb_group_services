@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "ts-node src/handler.ts",
-    "test": "jest"
+    "test": "jest ../../tests/user-service/unit",
+    "test:integration": "jest ../../tests/user-service/integration"
   },
   "dependencies": {
     "@airbnb-clone/contracts": "^1.0.0",
